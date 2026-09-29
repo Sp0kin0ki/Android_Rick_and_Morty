@@ -1,0 +1,53 @@
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration
+local.properties
+
+# Android build
+*/build/
+*/.cxx/
+.externalNativeBuild/
+
+# APK / AAB
+*.apk
+*.aab
+
+# Generated files
+captures/
+output-metadata.json
+
+# Kotlin
+.kotlin/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Android Studio caches
+.navigation/
+.idea/caches/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+
+# Firebase / Google services
+google-services.json
+
+# Keystore / signing
+*.jks
+*.keystore
+
+# Temporary files
+*.tmp
+*.temp
+*.log
