@@ -1,9 +1,7 @@
 package com.example.mobilelabs
 
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,53 +22,32 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mobilelabs.ui.theme.MobileLabsTheme
-
-class StartActivity : BaseActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        setContent {
-            MobileLabsTheme {
-                StartScreen(
-                    onRegistrationClick = {
-                        val intent = Intent(
-                            this@StartActivity,
-                            RegistrationActivity::class.java
-                        )
-
-                        startActivity(intent)
-                    },
-                    onLoginClick = {
-                        val intent = Intent(
-                            this@StartActivity,
-                            ContentActivity::class.java
-                        )
-
-                        startActivity(intent)
-                    }
-                )
-            }
-        }
-    }
-}
+import androidx.core.content.edit
 
 @Composable
-fun StartScreen(
-    onRegistrationClick: () -> Unit,
-    onLoginClick: () -> Unit
+fun RegistrationScreen(
+    onRegistrationComplete: () -> Unit
 ) {
 
-    var login by remember {
+    val context = LocalContext.current
+    var username by remember {
         mutableStateOf("")
     }
 
     var password by remember {
+        mutableStateOf("")
+    }
+
+    var confirmPassword by remember {
+        mutableStateOf("")
+    }
+
+    var errorMessage by remember {
         mutableStateOf("")
     }
 
@@ -79,6 +57,7 @@ fun StartScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(backgroundColor)
             .padding(24.dp)
     ) {
@@ -91,26 +70,10 @@ fun StartScreen(
         ) {
 
             Text(
-                text = "🛸",
-                fontSize = 52.sp
-            )
-
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
-
-            Text(
-                text = "RICK & MORTY",
+                text = "CREATE ACCOUNT",
                 color = greenColor,
-                fontSize = 30.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
-            )
-
-            Text(
-                text = "EXPLORER",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
             )
 
             Spacer(
@@ -118,19 +81,20 @@ fun StartScreen(
             )
 
             Text(
-                text = "Explore characters across the multiverse",
+                text = "Join the multiverse",
                 color = Color.LightGray,
                 fontSize = 14.sp
             )
 
             Spacer(
-                modifier = Modifier.height(36.dp)
+                modifier = Modifier.height(32.dp)
             )
 
             OutlinedTextField(
-                value = login,
+                value = username,
                 onValueChange = {
-                    login = it
+                    username = it
+                    errorMessage = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = {
@@ -154,6 +118,7 @@ fun StartScreen(
                 value = password,
                 onValueChange = {
                     password = it
+                    errorMessage = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = {
@@ -171,11 +136,76 @@ fun StartScreen(
             )
 
             Spacer(
-                modifier = Modifier.height(22.dp)
+                modifier = Modifier.height(14.dp)
             )
 
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = {
+                    confirmPassword = it
+                    errorMessage = ""
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text("Confirm password")
+                },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = greenColor,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = greenColor,
+                    cursorColor = greenColor
+                )
+            )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = Color(0xFFFF6B6B),
+                    fontSize = 13.sp
+                )
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+            }
+
             Button(
-                onClick = onLoginClick,
+                onClick = {
+
+                    when {
+                        username.length < 3 -> {
+                            errorMessage =
+                                "Username must contain at least 3 characters"
+                        }
+
+                        password.length < 6 -> {
+                            errorMessage =
+                                "Password must contain at least 6 characters"
+                        }
+
+                        password != confirmPassword -> {
+                            errorMessage =
+                                "Passwords do not match"
+                        }
+
+                        else -> {
+                            context.getSharedPreferences("rick_morty_preferences", Context.MODE_PRIVATE)
+                                .edit {
+                                    putString("username", username.trim())
+                                        .putString("password", password)
+                                }
+                            Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                            onRegistrationComplete()
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -186,7 +216,7 @@ fun StartScreen(
                 )
             ) {
                 Text(
-                    text = "ENTER",
+                    text = "CREATE ACCOUNT",
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -196,11 +226,12 @@ fun StartScreen(
             )
 
             TextButton(
-                onClick = onRegistrationClick,
-                modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    onRegistrationComplete()
+                }
             ) {
                 Text(
-                    text = "Create account",
+                    text = "Back to login",
                     color = greenColor
                 )
             }

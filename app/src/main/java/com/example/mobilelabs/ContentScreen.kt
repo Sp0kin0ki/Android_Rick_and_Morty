@@ -1,9 +1,5 @@
 package com.example.mobilelabs
 
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mobilelabs.ui.theme.MobileLabsTheme
 
 data class Character(
     val name: String,
@@ -38,91 +34,6 @@ data class Character(
     val status: String,
     val location: String
 )
-
-private val characters = listOf(
-    Character(
-        "Rick Sanchez",
-        "Human",
-        "Alive",
-        "Earth (C-137)"
-    ),
-    Character(
-        "Morty Smith",
-        "Human",
-        "Alive",
-        "Earth (C-137)"
-    ),
-    Character(
-        "Summer Smith",
-        "Human",
-        "Alive",
-        "Earth (C-137)"
-    ),
-    Character(
-        "Beth Smith",
-        "Human",
-        "Alive",
-        "Earth (C-137)"
-    ),
-    Character(
-        "Jerry Smith",
-        "Human",
-        "Alive",
-        "Earth (C-137)"
-    ),
-    Character(
-        "Mr. Meeseeks",
-        "Humanoid",
-        "Alive",
-        "Earth (Replacement Dimension)"
-    ),
-    Character(
-        "Birdperson",
-        "Alien",
-        "Alive",
-        "Bird World"
-    ),
-    Character(
-        "Squanchy",
-        "Alien",
-        "Alive",
-        "Unknown"
-    ),
-    Character(
-        "Evil Morty",
-        "Human",
-        "Alive",
-        "Unknown"
-    ),
-    Character(
-        "Pickle Rick",
-        "Human",
-        "Alive",
-        "Earth (C-137)"
-    )
-)
-
-class ContentActivity : BaseActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        setContent {
-            MobileLabsTheme {
-                ContentScreen(
-                    onSettingsClick = {
-                        val intent = Intent(
-                            this@ContentActivity,
-                            SettingsActivity::class.java
-                        )
-
-                        startActivity(intent)
-                    }
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun ContentScreen(
@@ -135,6 +46,7 @@ fun ContentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(backgroundColor)
     ) {
 
@@ -183,7 +95,7 @@ fun ContentScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            items(characters) { character ->
+            items(CharacterRepository.characters) { character ->
 
                 CharacterCard(
                     character = character

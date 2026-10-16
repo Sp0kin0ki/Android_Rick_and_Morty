@@ -1,9 +1,7 @@
 package com.example.mobilelabs
 
-import android.os.Bundle
+import android.content.Context
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -20,57 +19,46 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mobilelabs.ui.theme.MobileLabsTheme
-
-class RegistrationActivity : BaseActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        setContent {
-            MobileLabsTheme {
-                RegistrationScreen(
-                    onRegistrationComplete = {
-                        Toast.makeText(
-                            this,
-                            "Registration successful!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        finish()
-                    }
-                )
-            }
-        }
-    }
-}
 
 @Composable
-fun RegistrationScreen(
-    onRegistrationComplete: () -> Unit
+fun StartScreen(
+    onRegistrationClick: () -> Unit,
+    onLoginClick: () -> Unit
 ) {
 
-    var username by remember {
-        mutableStateOf("")
+    val context = LocalContext.current
+    val preferences = remember {
+        context.getSharedPreferences("rick_morty_preferences", Context.MODE_PRIVATE)
+    }
+    var login by remember {
+        mutableStateOf(preferences.getString("username", "") ?: "")
     }
 
     var password by remember {
         mutableStateOf("")
     }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    var confirmPassword by remember {
-        mutableStateOf("")
-    }
-
-    var errorMessage by remember {
-        mutableStateOf("")
+    DisposableEffect(lifecycleOwner, preferences) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val savedUsername = preferences.getString("username", "") ?: ""
+                if (savedUsername.isNotBlank()) login = savedUsername
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val backgroundColor = Color(0xFF101118)
@@ -79,6 +67,7 @@ fun RegistrationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(backgroundColor)
             .padding(24.dp)
     ) {
@@ -91,10 +80,26 @@ fun RegistrationScreen(
         ) {
 
             Text(
-                text = "CREATE ACCOUNT",
+                text = "🛸",
+                fontSize = 52.sp
+            )
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
+            Text(
+                text = "RICK & MORTY",
                 color = greenColor,
-                fontSize = 28.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "EXPLORER",
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
             )
 
             Spacer(
@@ -102,20 +107,19 @@ fun RegistrationScreen(
             )
 
             Text(
-                text = "Join the multiverse",
+                text = "Explore characters across the multiverse",
                 color = Color.LightGray,
                 fontSize = 14.sp
             )
 
             Spacer(
-                modifier = Modifier.height(32.dp)
+                modifier = Modifier.height(36.dp)
             )
 
             OutlinedTextField(
-                value = username,
+                value = login,
                 onValueChange = {
-                    username = it
-                    errorMessage = ""
+                    login = it
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = {
@@ -139,7 +143,6 @@ fun RegistrationScreen(
                 value = password,
                 onValueChange = {
                     password = it
-                    errorMessage = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = {
@@ -157,68 +160,19 @@ fun RegistrationScreen(
             )
 
             Spacer(
-                modifier = Modifier.height(14.dp)
+                modifier = Modifier.height(22.dp)
             )
-
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = {
-                    confirmPassword = it
-                    errorMessage = ""
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("Confirm password")
-                },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = greenColor,
-                    unfocusedBorderColor = Color.Gray,
-                    focusedLabelColor = greenColor,
-                    cursorColor = greenColor
-                )
-            )
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            if (errorMessage.isNotEmpty()) {
-                Text(
-                    text = errorMessage,
-                    color = Color(0xFFFF6B6B),
-                    fontSize = 13.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-            }
 
             Button(
                 onClick = {
-
                     when {
-                        username.length < 3 -> {
-                            errorMessage =
-                                "Username must contain at least 3 characters"
-                        }
-
-                        password.length < 6 -> {
-                            errorMessage =
-                                "Password must contain at least 6 characters"
-                        }
-
-                        password != confirmPassword -> {
-                            errorMessage =
-                                "Passwords do not match"
-                        }
-
-                        else -> {
-                            onRegistrationComplete()
-                        }
+                        login.isBlank() -> Toast.makeText(context, "Enter username", Toast.LENGTH_SHORT).show()
+                        password.isBlank() -> Toast.makeText(context, "Enter password", Toast.LENGTH_SHORT).show()
+                        preferences.contains("username") &&
+                            (login != preferences.getString("username", "") ||
+                                password != preferences.getString("password", "")) ->
+                            Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show()
+                        else -> onLoginClick()
                     }
                 },
                 modifier = Modifier
@@ -231,7 +185,7 @@ fun RegistrationScreen(
                 )
             ) {
                 Text(
-                    text = "CREATE ACCOUNT",
+                    text = "ENTER",
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -241,12 +195,11 @@ fun RegistrationScreen(
             )
 
             TextButton(
-                onClick = {
-                    onRegistrationComplete()
-                }
+                onClick = onRegistrationClick,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Back to login",
+                    text = "Create account",
                     color = greenColor
                 )
             }
