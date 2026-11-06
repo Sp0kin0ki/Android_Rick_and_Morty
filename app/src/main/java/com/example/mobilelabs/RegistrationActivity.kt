@@ -1,24 +1,13 @@
+
 package com.example.mobilelabs
 
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,19 +20,33 @@ import com.example.mobilelabs.ui.theme.MobileLabsTheme
 
 class RegistrationActivity : BaseActivity() {
 
+    companion object {
+        const val EXTRA_USERNAME =
+            "com.example.mobilelabs.EXTRA_USERNAME"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             MobileLabsTheme {
                 RegistrationScreen(
-                    onRegistrationComplete = {
-                        Toast.makeText(
-                            this,
-                            "Registration successful!",
-                            Toast.LENGTH_SHORT
-                        ).show()
 
+                    onRegistrationComplete = { username ->
+
+                        setResult(
+                            RESULT_OK,
+                            Intent().putExtra(
+                                EXTRA_USERNAME,
+                                username
+                            )
+                        )
+
+                        finish()
+                    },
+
+                    onBackToLogin = {
+                        setResult(RESULT_CANCELED)
                         finish()
                     }
                 )
@@ -54,7 +57,8 @@ class RegistrationActivity : BaseActivity() {
 
 @Composable
 fun RegistrationScreen(
-    onRegistrationComplete: () -> Unit
+    onRegistrationComplete: (String) -> Unit,
+    onBackToLogin: () -> Unit
 ) {
 
     var username by remember {
@@ -97,9 +101,7 @@ fun RegistrationScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Join the multiverse",
@@ -107,9 +109,7 @@ fun RegistrationScreen(
                 fontSize = 14.sp
             )
 
-            Spacer(
-                modifier = Modifier.height(32.dp)
-            )
+            Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
                 value = username,
@@ -131,9 +131,7 @@ fun RegistrationScreen(
                 )
             )
 
-            Spacer(
-                modifier = Modifier.height(14.dp)
-            )
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = password,
@@ -156,9 +154,7 @@ fun RegistrationScreen(
                 )
             )
 
-            Spacer(
-                modifier = Modifier.height(14.dp)
-            )
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = confirmPassword,
@@ -181,9 +177,7 @@ fun RegistrationScreen(
                 )
             )
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (errorMessage.isNotEmpty()) {
                 Text(
@@ -192,15 +186,14 @@ fun RegistrationScreen(
                     fontSize = 13.sp
                 )
 
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
             Button(
                 onClick = {
 
                     when {
+
                         username.length < 3 -> {
                             errorMessage =
                                 "Username must contain at least 3 characters"
@@ -217,7 +210,7 @@ fun RegistrationScreen(
                         }
 
                         else -> {
-                            onRegistrationComplete()
+                            onRegistrationComplete(username)
                         }
                     }
                 },
@@ -236,14 +229,10 @@ fun RegistrationScreen(
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
-                onClick = {
-                    onRegistrationComplete()
-                }
+                onClick = onBackToLogin
             ) {
                 Text(
                     text = "Back to login",

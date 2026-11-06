@@ -1,24 +1,15 @@
+
 package com.example.mobilelabs
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,20 +22,45 @@ import com.example.mobilelabs.ui.theme.MobileLabsTheme
 
 class StartActivity : BaseActivity() {
 
+    private var registeredUsername by mutableStateOf("")
+
+    private val registrationLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+
+            if (result.resultCode == RESULT_OK) {
+
+                registeredUsername =
+                    result.data?.getStringExtra(
+                        RegistrationActivity.EXTRA_USERNAME
+                    ).orEmpty()
+
+                Toast.makeText(
+                    this,
+                    "Registration successful!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             MobileLabsTheme {
                 StartScreen(
+                    initialLogin = registeredUsername,
+
                     onRegistrationClick = {
                         val intent = Intent(
                             this@StartActivity,
                             RegistrationActivity::class.java
                         )
 
-                        startActivity(intent)
+                        registrationLauncher.launch(intent)
                     },
+
                     onLoginClick = {
                         val intent = Intent(
                             this@StartActivity,
@@ -61,6 +77,7 @@ class StartActivity : BaseActivity() {
 
 @Composable
 fun StartScreen(
+    initialLogin: String = "",
     onRegistrationClick: () -> Unit,
     onLoginClick: () -> Unit
 ) {
@@ -71,6 +88,12 @@ fun StartScreen(
 
     var password by remember {
         mutableStateOf("")
+    }
+
+    LaunchedEffect(initialLogin) {
+        if (initialLogin.isNotEmpty()) {
+            login = initialLogin
+        }
     }
 
     val backgroundColor = Color(0xFF101118)
@@ -95,9 +118,7 @@ fun StartScreen(
                 fontSize = 52.sp
             )
 
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "RICK & MORTY",
@@ -113,9 +134,7 @@ fun StartScreen(
                 fontWeight = FontWeight.Medium
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Explore characters across the multiverse",
@@ -123,9 +142,7 @@ fun StartScreen(
                 fontSize = 14.sp
             )
 
-            Spacer(
-                modifier = Modifier.height(36.dp)
-            )
+            Spacer(modifier = Modifier.height(36.dp))
 
             OutlinedTextField(
                 value = login,
@@ -146,9 +163,7 @@ fun StartScreen(
                 )
             )
 
-            Spacer(
-                modifier = Modifier.height(14.dp)
-            )
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = password,
@@ -170,9 +185,7 @@ fun StartScreen(
                 )
             )
 
-            Spacer(
-                modifier = Modifier.height(22.dp)
-            )
+            Spacer(modifier = Modifier.height(22.dp))
 
             Button(
                 onClick = onLoginClick,
@@ -191,9 +204,7 @@ fun StartScreen(
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
                 onClick = onRegistrationClick,
