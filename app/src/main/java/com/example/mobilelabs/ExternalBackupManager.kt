@@ -67,18 +67,14 @@ object ExternalBackupManager {
             ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, FILE_NAME)
                 put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_DIR)
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
+                put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_DIR)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
         ) ?: error("Не удалось создать файл в Documents.")
         resolver.openOutputStream(uri, "wt")?.use { it.write(bytes) }
             ?: error("Не удалось записать файл.")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
-        }
-        File(context.filesDir, PRIVATE_BACKUP).writeBytes(bytes)
+        resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+        File(context.filesDir, PRIVATE_BACKUP).delete()
         info(context).copy(exists = true)
     }
 
@@ -87,8 +83,13 @@ object ExternalBackupManager {
         // Скрытая резервная копия хранится во внутреннем хранилище приложения до удаления.
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: error("Не удалось прочитать файл перед удалением.")
-        File(context.filesDir, PRIVATE_BACKUP).writeBytes(bytes)
-        context.contentResolver.delete(uri, null, null) > 0
+        val privateFile = File(context.filesDir, PRIVATE_BACKUP)
+        privateFile.writeBytes(bytes)
+        val deleted = context.contentResolver.delete(uri, null, null) > 0
+        if (!deleted) {
+            privateFile.delete()
+        }
+        deleted
     }
 
     fun restore(context: Context): Result<Boolean> = runCatching {
@@ -100,16 +101,15 @@ object ExternalBackupManager {
             ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, FILE_NAME)
                 put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_DIR)
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
+                put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_DIR)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
         ) ?: error("Не удалось восстановить файл.")
         resolver.openOutputStream(uri, "wt")?.use { it.write(privateFile.readBytes()) }
             ?: error("Не удалось записать восстановленный файл.")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+        resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+        if (!privateFile.delete() && privateFile.exists()) {
+            error("Файл восстановлен, но внутреннюю резервную копию удалить не удалось.")
         }
         true
     }

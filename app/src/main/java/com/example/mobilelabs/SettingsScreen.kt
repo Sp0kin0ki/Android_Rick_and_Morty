@@ -132,7 +132,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 ExternalBackupManager.deletePublicAndKeepPrivateCopy(context).onSuccess { deleted ->
                     backupInfo = ExternalBackupManager.info(context)
                     privateBackupExists = ExternalBackupManager.hasPrivateBackup(context)
-                    Toast.makeText(context, if (deleted) "Файл удалён; копия сохранена внутри приложения" else "Файл не найден", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, if (deleted) "Файл перемещён во внутреннее хранилище" else "Файл не найден", Toast.LENGTH_LONG).show()
                 }.onFailure {
                     Toast.makeText(context, it.message ?: "Ошибка удаления", Toast.LENGTH_LONG).show()
                 }
