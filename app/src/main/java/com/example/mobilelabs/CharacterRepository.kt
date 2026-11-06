@@ -1,78 +1,71 @@
 package com.example.mobilelabs
 
 import android.content.Context
-import androidx.compose.runtime.mutableStateListOf
-import androidx.core.content.edit
+import com.example.mobilelabs.data.AppDatabase
+import com.example.mobilelabs.data.CharacterEntity
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+data class Character(
+    val id: Int,
+    val name: String,
+    val species: String,
+    val status: String,
+    val location: String,
+    val image: String = ""
+)
 
 object CharacterRepository {
-    private const val PREFS_NAME = "rick_morty_preferences"
-    private const val BACKUP_KEY = "characters_backup"
-    private const val CACHE_KEY = "characters_cache"
 
-    val characters = mutableStateListOf<Character>()
+    private fun dao(context: Context) = AppDatabase.get(context).characterDao()
 
-    fun hasBackup(context: Context): Boolean =
-        preferences(context).contains(BACKUP_KEY)
-
-    fun createBackup(context: Context) {
-        preferences(context).edit { putString(BACKUP_KEY, serialize(characters)) }
-    }
-
-    fun restoreBackup(context: Context): Boolean {
-        val serialized = preferences(context).getString(BACKUP_KEY, null) ?: return false
-        val restored = deserialize(serialized)
-        if (restored.isEmpty()) return false
-        characters.clear()
-        characters.addAll(restored)
-        return true
-    }
-
-    fun deleteBackup(context: Context): Boolean {
-        val existed = hasBackup(context)
-        preferences(context).edit { remove(BACKUP_KEY) }
-        return existed
-    }
-
-    fun loadBackupIfAvailable(context: Context) {
-        if (characters.isEmpty()) loadCache(context)
-        if (characters.isEmpty()) restoreBackup(context)
-    }
-
-    fun saveCache(context: Context, items: List<Character>) {
-        preferences(context).edit { putString(CACHE_KEY, serialize(items)) }
-        characters.clear()
-        characters.addAll(items)
-    }
-
-    fun appendToCache(context: Context, items: List<Character>) {
-        val combined = (characters.toList() + items).distinctBy { it.name }
-        saveCache(context, combined)
-    }
-
-    fun loadCache(context: Context): Boolean {
-        val serialized = preferences(context).getString(CACHE_KEY, null) ?: return false
-        val cached = deserialize(serialized)
-        if (cached.isEmpty()) return false
-        characters.clear()
-        characters.addAll(cached)
-        return true
-    }
-
-    private fun serialize(items: List<Character>): String =
-        items.joinToString("\\n") { character ->
-            listOf(character.name, character.species, character.status, character.location)
-                .joinToString("\\t") { it.replace("\\t", " ").replace("\\n", " ") }
+    /** Реактивный поток персонажей — при изменении БД список обновляется сам. */
+    fun observeCharacters(context: Context): Flow<List<Character>> =
+        dao(context).observeAll().map { entities ->
+            entities.map { it.toModel() }
         }
 
-    private fun deserialize(serialized: String): List<Character> =
-        serialized.lineSequence()
-            .filter { it.isNotBlank() }
-            .mapNotNull { line ->
-                val fields = line.split('\t')
-                if (fields.size == 4) Character(fields[0], fields[1], fields[2], fields[3]) else null
-            }
-            .toList()
+    suspend fun hasData(context: Context): Boolean = dao(context).count() > 0
 
-    private fun preferences(context: Context) =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    /** Одноразовый снимок таблицы (для экспорта в файл). */
+    suspend fun snapshot(context: Context): List<Character> =
+        dao(context).getAll().map { it.toModel() }
+
+    /** «Обновить»: перезаписывает таблицу данными выбранной страницы API. */
+    suspend fun refreshFromApi(context: Context, page: Int): Int {
+        val response = RickAndMortyApi.service.getCharacters(page)
+        val entities = response.results.orEmpty().map { it.toEntity() }
+        val dao = dao(context)
+        dao.clear()
+        dao.upsertAll(entities)
+        return response.info?.pages ?: 1
+    }
+
+    /** «Загрузить ещё»: дописывает следующую страницу API в таблицу. */
+    suspend fun loadMoreFromApi(context: Context, page: Int): Int {
+        val response = RickAndMortyApi.service.getCharacters(page)
+        val entities = response.results.orEmpty().map { it.toEntity() }
+        dao(context).upsertAll(entities)
+        return response.info?.pages ?: 1
+    }
+
+    suspend fun clear(context: Context) = dao(context).clear()
+
+    private fun ApiCharacter.toEntity() = CharacterEntity(
+        id = id,
+        name = name,
+        species = species ?: "Unknown",
+        status = status ?: "Unknown",
+        location = location?.name ?: "Unknown",
+        image = image ?: ""
+    )
+
+    private fun CharacterEntity.toModel() = Character(
+        id = id,
+        name = name,
+        species = species,
+        status = status,
+        location = location,
+        image = image
+    )
 }

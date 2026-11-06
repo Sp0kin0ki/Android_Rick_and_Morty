@@ -114,12 +114,14 @@ fun SettingsScreen(onBack: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Button(
             onClick = {
-                ExternalBackupManager.create(context).onSuccess {
-                    backupInfo = ExternalBackupManager.info(context)
-                    privateBackupExists = ExternalBackupManager.hasPrivateBackup(context)
-                    Toast.makeText(context, "Резервная копия сохранена в Documents/RickAndMorty", Toast.LENGTH_LONG).show()
-                }.onFailure {
-                    Toast.makeText(context, it.message ?: "Не удалось создать резервную копию", Toast.LENGTH_LONG).show()
+                scope.launch {
+                    ExternalBackupManager.create(context).onSuccess {
+                        backupInfo = ExternalBackupManager.info(context)
+                        privateBackupExists = ExternalBackupManager.hasPrivateBackup(context)
+                        Toast.makeText(context, "Резервная копия сохранена в Documents/RickAndMorty", Toast.LENGTH_LONG).show()
+                    }.onFailure {
+                        Toast.makeText(context, it.message ?: "Не удалось создать резервную копию", Toast.LENGTH_LONG).show()
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),

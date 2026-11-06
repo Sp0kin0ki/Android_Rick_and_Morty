@@ -28,8 +28,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Log.d("Lifecycle", "MainActivity: onCreate")
 
-        CharacterRepository.loadBackupIfAvailable(this)
-
         setContent {
             MobileLabsTheme {
                 val navController = rememberNavController()

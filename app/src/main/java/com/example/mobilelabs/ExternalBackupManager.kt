@@ -54,8 +54,8 @@ object ExternalBackupManager {
         } catch (_: Exception) { BackupInfo(false) }
     }
 
-    fun create(context: Context): Result<BackupInfo> = runCatching {
-        val lines = CharacterRepository.characters.joinToString("\n") {
+    suspend fun create(context: Context): Result<BackupInfo> = runCatching {
+        val lines = CharacterRepository.snapshot(context).joinToString("\n") {
             "Name: ${it.name}\nSpecies: ${it.species}\nStatus: ${it.status}\nLocation: ${it.location}\n"
         }
         require(lines.isNotBlank()) { "Сначала загрузите персонажей на экране данных." }
